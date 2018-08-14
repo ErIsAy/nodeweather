@@ -10,18 +10,33 @@ function get(query) {
     units: 'imperial'
   };
 
-  parameters.q = query
+  const zipCode = parseInt(query);
+  if (!isNaN(zipCode)) {
+    parameters.zip = zipCode;
+  } else {
+    parameters.q = query;
+  }
 
-  http.get(`https://api.openweathermap.org/data/2.5/weather?${querystring.stringify(parameters)}`, response => {
+  const url = `https://api.openweathermap.org/data/2.5/weather?${querystring.stringify(parameters)}`;
+
+  const request = http.get(url, response => {
 
     console.log(response.statusCode);
 
     let body = "";
 
+    //READING THE DATA
     response.on('data', data => {
       body += data.toString()
-      console.log(body)
     });
+
+    response.on('end', () => {
+      console.log(body);
+      //PARSING
+
+      //PRINTING
+
+    })
 
   });
 
