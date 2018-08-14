@@ -1,4 +1,5 @@
-const http = require('https')
+const http = require('http')
+const https = require('https')
 const querystring = require('querystring');
 const api = require('./api')
 
@@ -11,46 +12,61 @@ function messageToPrint(query) {
   console.log(message);
 };
 
+function logError(error) {
+  console.error(error.message);
+}
+
 function get(query) {
 
+  try {
+    const parameters = {
+      APPID: api.key,
+      units: 'imperial'
+    };
 
-  const parameters = {
-    APPID: api.key,
-    units: 'imperial'
-  };
+    const zipCode = parseInt(query);
+    if (!isNaN(zipCode)) {
+      parameters.zip = zipCode;
+    } else {
+      parameters.q = query;
+    }
 
-  const zipCode = parseInt(query);
-  if (!isNaN(zipCode)) {
-    parameters.zip = zipCode;
-  } else {
-    parameters.q = query;
-  }
+    const url = `https://api.openweathermap.org/data/2.5/weather?${querystring.stringify(parameters)}`;
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?${querystring.stringify(parameters)}`;
+    const request = https.get(url, response => {
+      if (response.statusCode === 200) {
 
-  const request = http.get(url, response => {
+        console.log(response.statusCode);
 
-    console.log(response.statusCode);
+        let body = "";
 
-    let body = "";
+        //READING THE DATA
+        response.on('data', data => {
+          body += data.toString()
+        });
 
-    //READING THE DATA
-    response.on('data', data => {
-      body += data.toString()
+        response.on('end', () => {
+          try {
+            // console.log(body);
+            //PARSING
+            const queryresult = JSON.parse(body);
+            // console.log(queryresult.name);
+            //PRINTING
+            // messageToPrint(queryresult.name, queryresult.weather[0].main, queryresult.weather[0].description, queryresult.main.temp);
+            messageToPrint(queryresult)
+          } catch (error) {
+            logError(error);
+          }
+        });
+      } else {
+        const statusErrorCode = new Error(`There was an error getting the message for "${query}". (${http.STATUS_CODES[response.statusCode]})`);
+        logError(statusErrorCode);
+      }
     });
 
-    response.on('end', () => {
-      // console.log(body);
-      //PARSING
-      const queryresult = JSON.parse(body);
-      // console.log(queryresult.name);
-      //PRINTING
-      // messageToPrint(queryresult.name, queryresult.weather[0].main, queryresult.weather[0].description, queryresult.main.temp);
-      messageToPrint(queryresult)
-    })
-
-  });
-
+  } catch (error) {
+    logError(error);
+  }
 
 };
 
